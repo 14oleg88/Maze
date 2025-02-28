@@ -2,6 +2,18 @@ from pygame import *
 import random
 
 init()
+font.init()
+mixer.init()
+mixer.music.load("jungles.ogg")
+mixer.music.set_volume(0.1)
+mixer.music.play(loops=-1)
+
+kick_sound = mixer.Sound('kick.ogg')
+kick_sound.set_volume(0.4)
+FONT = 'PressStart2P-Regular.ttf'
+
+
+
 
 #створи вікно гри
 FPS = 60
@@ -21,6 +33,22 @@ enemy_img = image.load("ZPfe8ZBU7nuPiuePokAAGG5zFWHVRN19gocCLgdT.png")
 treasure_img = image.load("treasure.png")
 
 all_sprites = sprite.Group()
+all_labels = sprite.Group()
+
+class Label(sprite.Sprite):
+    def __init__(self, text, x,y, fontSize = 40, fontname=FONT, color =(255,255,255)):
+        super().__init__()
+        self.color = color
+        self.font = font.Font(fontname, fontSize)
+        self.image = self.font.render(text, True, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        all_labels.add(self)
+
+    def set_text(self, new_text, color =(255,255,255)):
+        self.image = self.font.render(new_text, True, color)
+
 
 class BaseSprite(sprite.Sprite):
     def __init__(self, image, x,y,width, height):
@@ -68,7 +96,8 @@ class Player(BaseSprite):
             if now-self.damage_timer > 1000:
                 self.damage_timer = time.get_ticks()
                 self.hp -= 10
-                print(self.hp)
+                hp_label.set_text(f"HP: {self.hp}")
+                kick_sound.play()
 
             self.rect.x, self.rect.y = old_pos
             
@@ -106,6 +135,8 @@ class Enemy (BaseSprite):
 
 
 player1 = Player(player_img, 200,300, TILE_SIZE-5, TILE_SIZE-5)
+result = Label("", 200, 300, fontSize=60)
+hp_label = Label(f"HP:{player1.hp}", 10, 10, fontSize=30)
 walls = sprite.Group()
 enemys = sprite.Group()
 with open("map.txt", "r") as file:  
@@ -137,15 +168,21 @@ while run:
             run=False
     if player1.hp<=0:
         finish = True
+        result.set_text("Ти програв!!!")
+        result.rect.x = WIDTH/2 - result.image.get_width()/2
 
     if sprite.collide_rect(player1, treasure):
         finish=True
+        result.set_text("Ти виграв!!!")
+        result.rect.x = WIDTH/2 - result.image.get_width()/2
 
     if not finish:
         player1.update()
         enemys.update()
     walls.draw(window)
     all_sprites.draw(window)
+
+    all_labels.draw(window)
 
     display.update()
     clock.tick(FPS)
